@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>業務効率化診断｜人材紹介・派遣会社向け</title>
+<meta name="description" content="CAの人数と応募数を入れるだけ。日程調整と書類作成を自動化すると、月に何時間浮くかが1分で分かります。">
+<style>
+  :root {
+    --bg: #f6f7fb;
+    --card: #ffffff;
+    --text: #1d2433;
+    --muted: #5b6475;
+    --line: #e2e6ee;
+    --main: #1f6feb;
+    --main-dark: #1554b8;
+    --accent: #ff8a00;
+    --good: #0f9d58;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", Meiryo, sans-serif;
+    line-height: 1.7;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 16px; }
+  header.hero {
+    background: linear-gradient(135deg, #1f6feb, #1554b8);
+    color: #fff;
+    padding: 48px 0 40px;
+  }
+  .hero .tag {
+    display: inline-block;
+    background: rgba(255,255,255,.18);
+    border-radius: 999px;
+    padding: 2px 12px;
+    font-size: 13px;
+  }
+  .hero h1 { font-size: clamp(24px, 6vw, 34px); line-height: 1.35; margin: 12px 0; }
+  .hero p { margin: 0 0 20px; opacity: .92; }
+  .btn {
+    display: inline-block;
+    border: 0;
+    border-radius: 999px;
+    padding: 14px 28px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+  }
+  .btn-accent { background: var(--accent); color: #fff; }
+  .btn-accent:hover { filter: brightness(1.05); }
+  .btn-main { background: var(--main); color: #fff; }
+  .btn-main:hover { background: var(--main-dark); }
+  .btn-block { display: block; width: 100%; }
+  section { padding: 36px 0; }
+  h2 { font-size: 22px; margin: 0 0 16px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .stat { text-align: center; }
+  .stat .num { font-size: 22px; font-weight: 800; color: var(--main); line-height: 1.3; }
+  .stat .lbl { font-size: 13px; color: var(--muted); }
+  .note { font-size: 12px; color: var(--muted); margin-top: 12px; }
+  .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .tool h3 { margin: 0 0 6px; font-size: 18px; }
+  .tool p { margin: 0; font-size: 14px; color: var(--muted); }
+  @media (max-width: 560px) {
+    .stats, .tools { grid-template-columns: 1fr; }
+  }
+
+  /* 診断 */
+  .q { margin-bottom: 22px; }
+  .q-title { font-weight: 700; margin-bottom: 8px; }
+  .q-title small { font-weight: 400; color: var(--muted); }
+  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  @media (max-width: 560px) { .choices { grid-template-columns: 1fr; } }
+  .choices label {
+    display: block;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    background: #fff;
+  }
+  .choices input { margin-right: 6px; }
+  .choices label:has(input:checked) { border-color: var(--main); background: #eef4ff; }
+  input[type=number], input[type=text], input[type=email], input[type=tel], select, textarea {
+    width: 100%;
+    font: inherit;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+  }
+  .num-row { display: flex; align-items: center; gap: 8px; }
+  .num-row input { max-width: 160px; }
+  .err { color: #c62828; font-size: 14px; margin-top: 8px; min-height: 1em; }
+
+  /* 結果 */
+  #result { display: none; }
+  .big { font-size: clamp(34px, 9vw, 48px); font-weight: 800; color: var(--good); line-height: 1.2; }
+  .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+  @media (max-width: 560px) { .result-grid { grid-template-columns: 1fr; } }
+  .pill { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: 13px; font-weight: 700; }
+  .pill.high { background: #ffe9d6; color: #b45309; }
+  .pill.mid { background: #fff6cc; color: #8a6d00; }
+  .pill.low { background: #e6f4ea; color: #137333; }
+  .reco { margin: 0; padding-left: 20px; }
+  details { margin-top: 12px; font-size: 13px; color: var(--muted); }
+
+  /* フォーム */
+  #contact { display: none; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-weight: 700; margin-bottom: 4px; }
+  .req { color: #c62828; font-size: 12px; margin-left: 4px; }
+  .hp { position: absolute; left: -9999px; }
+  #thanks { display: none; }
+  footer { padding: 24px 0 40px; font-size: 13px; color: var(--muted); }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="tag">人材紹介・派遣会社さま向け　無料</span>
+    <h1>あなたの会社は、月に何時間浮く？<br>業務効率化診断（1分）</h1>
+    <p>CAの人数と応募数を入れるだけ。日程調整と書類作成を自動化した場合に浮く時間の目安が分かります。</p>
+    <a class="btn btn-accent" href="#shindan">無料で診断する</a>
+  </div>
+</header>
+
+<main>
+  <section>
+    <div class="wrap">
+      <h2>導入した会社の実績</h2>
+      <div class="card">
+        <div class="stats">
+          <div class="stat"><div class="num">5分以内</div><div class="lbl">応募から面接の案内まで</div></div>
+          <div class="stat"><div class="num">50〜60％<br>→ 75〜90％</div><div class="lbl">面接設定率</div></div>
+          <div class="stat"><div class="num">約2時間減</div><div class="lbl">CA1人あたり1日の残業</div></div>
+        </div>
+        <p class="note">人材紹介会社（CA10名）での実測。約6か月・応募1,500件以上。面接設定率は導入前後の比較。残業時間は「つなげる君」と「つくる君」の併用による。効果は企業により異なります。</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>使うのは、この2つ</h2>
+      <div class="tools">
+        <div class="card tool">
+          <h3>つなげる君</h3>
+          <p>応募が入ったら、担当CAを自動で決めて、CA本人のGmailから日程調整のメール。応募者が空き枠を選ぶと、カレンダーに予定とMeetが入ります。</p>
+        </div>
+        <div class="card tool">
+          <h3>つくる君</h3>
+          <p>履歴書の写真と面談メモから、履歴書・職務経歴書・推薦文をAIが下書き。CAが確認して直してから仕上げます。</p>
+        </div>
+      </div>
+      <p class="note">Googleスプレッドシート・Gmail・Googleカレンダーで動きます。</p>
+    </div>
+  </section>
+
+  <section id="shindan">
+    <div class="wrap">
+      <h2>業務効率化診断</h2>
+      <form id="qform" class="card" novalidate>
+        <div class="q">
+          <div class="q-title">Q1. CAの人数</div>
+          <div class="num-row"><input type="number" name="ca" min="1" max="999" inputmode="numeric" placeholder="例：5"><span>名</span></div>
+        </div>
+
+        <div class="q">
+          <div class="q-title">Q2. 1か月の応募数 <small>（だいたいで大丈夫です）</small></div>
+          <div class="num-row"><input type="number" name="apps" min="0" max="99999" inputmode="numeric" placeholder="例：200"><span>件</span></div>
+        </div>
+
+        <div class="q">
+          <div class="q-title">Q3. 応募から、最初に連絡するまでの時間</div>
+          <div class="choices">
+            <label><input type="radio" name="reply" value="0">5分以内</label>
+            <label><input type="radio" name="reply" value="1">1時間以内</label>
+            <label><input type="radio" name="reply" value="2">半日以内</label>
+            <label><input type="radio" name="reply" value="3">翌日以降</label>
+          </div>
+        </div>
+
+        <div class="q">
+          <div class="q-title">Q4. 面接の日程調整のやり方</div>
+          <div class="choices">
+            <label><input type="radio" name="sched" value="15">電話が中心</label>
+            <label><input type="radio" name="sched" value="10">メールで何往復か</label>
+            <label><input type="radio" name="sched" value="4">日程調整ツールを使っている</label>
+          </div>
+        </div>
+
+        <div class="q">
+          <div class="q-title">Q5. 今の面接設定率 <small>（応募のうち面接まで進む割合）</small></div>
+          <div class="choices">
+            <label><input type="radio" name="rate" value="75">75％以上</label>
+            <label><input type="radio" name="rate" value="60">60〜75％</label>
+            <label><input type="radio" name="rate" value="40">40〜60％</label>
+            <label><input type="radio" name="rate" value="0">40％未満</label>
+            <label><input type="radio" name="rate" value="-1">分からない</label>
+          </div>
+        </div>
+
+        <div class="q">
+          <div class="q-title">Q6. 1か月に作る履歴書・職務経歴書の件数 <small>（求職者の人数で）</small></div>
+          <div class="num-row"><input type="number" name="docs" min="0" max="99999" inputmode="numeric" placeholder="例：40"><span>人分</span></div>
+        </div>
+
+        <div class="q">
+          <div class="q-title">Q7. 1人分の書類づくりにかかる時間</div>
+          <div class="choices">
+            <label><input type="radio" name="doctime" value="10">15分未満</label>
+            <label><input type="radio" name="doctime" value="22">15〜30分</label>
+            <label><input type="radio" name="doctime" value="45">30〜60分</label>
+            <label><input type="radio" name="doctime" value="75">60分以上</label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-main btn-block">結果を見る</button>
+        <div class="err" id="qerr" role="alert"></div>
+      </form>
+    </div>
+  </section>
+
+  <section id="result">
+    <div class="wrap">
+      <h2>診断結果</h2>
+      <div class="card">
+        <div>自動化で浮く時間の目安</div>
+        <div class="big">月 <span id="r-hours">0</span> 時間</div>
+        <div class="result-grid">
+          <div class="card"><div class="lbl">CA1人あたり</div><strong>月 <span id="r-per">0</span> 時間</strong></div>
+          <div class="card"><div class="lbl">人件費に直すと（時給2,000円）</div><strong>月 約 <span id="r-yen">0</span> 円</strong></div>
+          <div class="card"><div class="lbl">日程調整（つなげる君）</div><strong>月 <span id="r-sched">0</span> 時間</strong></div>
+          <div class="card"><div class="lbl">書類づくり（つくる君）</div><strong>月 <span id="r-doc">0</span> 時間</strong></div>
+        </div>
+        <p><strong>面接設定率の伸びしろ：</strong><span id="r-room" class="pill"></span></p>
+        <p id="r-room-text"></p>
+        <p><strong>おすすめ</strong></p>
+        <ul class="reco" id="r-reco"></ul>
+        <details>
+          <summary>この数字の出し方</summary>
+          <p>日程調整は、応募1件あたりの手間を、電話中心15分・メール10分・ツール使用4分と置き、自動化後も確認に2分かかるとして計算しています。書類づくりは、選んだ時間の中央の値から、自動化後の確認・修正10分を引いて計算しています。人件費は時給2,000円で計算しています。すべて目安で、実際の効果を約束するものではありません。</p>
+        </details>
+        <p style="margin-top:20px"><a class="btn btn-accent btn-block" href="#contact" id="go-contact">この結果をもとに、30分の無料デモを申し込む</a></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact">
+    <div class="wrap">
+      <h2>無料デモのお申し込み</h2>
+      <form id="cform" class="card" novalidate>
+        <div class="field">
+          <label for="c-company">会社名<span class="req">必須</span></label>
+          <input id="c-company" type="text" name="company" autocomplete="organization">
+        </div>
+        <div class="field">
+          <label for="c-name">お名前<span class="req">必須</span></label>
+          <input id="c-name" type="text" name="name" autocomplete="name">
+        </div>
+        <div class="field">
+          <label for="c-email">メールアドレス<span class="req">必須</span></label>
+          <input id="c-email" type="email" name="email" autocomplete="email">
+        </div>
+        <div class="field">
+          <label for="c-tel">電話番号<small>（任意）</small></label>
+          <input id="c-tel" type="tel" name="tel" autocomplete="tel">
+        </div>
+        <div class="field">
+          <label for="c-want">ご希望</label>
+          <select id="c-want" name="want">
+            <option>30分の無料デモ（オンライン）</option>
+            <option>資料だけほしい</option>
+            <option>まずは相談したい</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="c-msg">ご質問など<small>（任意）</small></label>
+          <textarea id="c-msg" name="message" rows="4"></textarea>
+        </div>
+        <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div class="field">
+          <label><input type="checkbox" name="agree"> <a href="privacy.html" target="_blank">プライバシーポリシー</a>に同意する</label>
+        </div>
+        <button type="submit" class="btn btn-accent btn-block" id="c-submit">申し込む</button>
+        <div class="err" id="cerr" role="alert"></div>
+      </form>
+      <div class="card" id="thanks">
+        <h3 style="margin-top:0">お申し込みありがとうございました</h3>
+        <p>2営業日以内に、ご入力のメールアドレスへご連絡します。</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    運営：つなげる君・つくる君 運営事務局　｜　<a href="privacy.html">プライバシーポリシー</a>
+  </div>
+</footer>
+
+<script>
+  // 申し込みの送り先（問い合わせ受付のApps ScriptをウェブアプリとしてデプロイしたURL）。空のままだと送信しない
+  var ENDPOINT = '';
+
+  var HOURLY_YEN = 2000;
+  var SCHED_AFTER_MIN = 2;  // 自動化後も応募1件ごとに残る確認の手間（分）
+  var DOC_AFTER_MIN = 10;   // 自動化後も1人分ごとに残る確認・修正の手間（分）
+
+  var lastResult = null;
+
+  function radio(form, name) {
+    var el = form.querySelector('input[name="' + name + '"]:checked');
+    return el ? Number(el.value) : null;
+  }
+  function labelOf(form, name) {
+    var el = form.querySelector('input[name="' + name + '"]:checked');
+    return el ? el.parentNode.textContent.trim() : '';
+  }
+  function intOf(form, name) {
+    var v = form.querySelector('input[name="' + name + '"]').value.trim();
+    if (v === '') return null;
+    var n = Number(v);
+    return Number.isFinite(n) && n >= 0 ? Math.floor(n) : NaN;
+  }
+  function round1(n) { return Math.round(n * 10) / 10; }
+  function yen(n) { return (Math.round(n / 1000) * 1000).toLocaleString('ja-JP'); }
+
+  function diagnose(a) {
+    var schedMin = a.apps * Math.max(0, a.sched - SCHED_AFTER_MIN);
+    var docMin = a.docs * Math.max(0, a.doctime - DOC_AFTER_MIN);
+    var hours = (schedMin + docMin) / 60;
+
+    // 返信が遅く、設定率が低いほど伸びしろが大きい
+    var room;
+    if (a.reply === 0 && a.rate >= 75) room = 'low';
+    else if (a.reply >= 2 || (a.rate >= 0 && a.rate < 60)) room = 'high';
+    else room = 'mid';
+
+    return {
+      hours: round1(hours),
+      perCa: round1(hours / a.ca),
+      yen: hours * HOURLY_YEN,
+      schedHours: round1(schedMin / 60),
+      docHours: round1(docMin / 60),
+      room: room
+    };
+  }
+
+  var ROOM_TEXT = {
+    high: ['大きい', '応募者は、最初に連絡をくれた会社の面接を先に決めがちです。応募から数分で案内が届くようにすると、取りこぼしが減る見込みがあります。'],
+    mid: ['あり', '最初の連絡をもう少し早くすると、面接まで進む人が増える見込みがあります。'],
+    low: ['小さい', '連絡の速さと設定率は、すでに高い水準です。浮いた時間を面談の質に回す使い方がおすすめです。']
+  };
+
+  document.getElementById('qform').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var f = ev.target;
+    var a = {
+      ca: intOf(f, 'ca'), apps: intOf(f, 'apps'), docs: intOf(f, 'docs'),
+      reply: radio(f, 'reply'), sched: radio(f, 'sched'), rate: radio(f, 'rate'), doctime: radio(f, 'doctime')
+    };
+    var err = document.getElementById('qerr');
+    var missing = [];
+    if (!(a.ca >= 1)) missing.push('Q1');
+    if (a.apps === null || Number.isNaN(a.apps)) missing.push('Q2');
+    if (a.reply === null) missing.push('Q3');
+    if (a.sched === null) missing.push('Q4');
+    if (a.rate === null) missing.push('Q5');
+    if (a.docs === null || Number.isNaN(a.docs)) missing.push('Q6');
+    if (a.doctime === null) missing.push('Q7');
+    if (missing.length) { err.textContent = missing.join('・') + ' に答えてください。'; return; }
+    err.textContent = '';
+
+    var r = diagnose(a);
+    document.getElementById('r-hours').textContent = r.hours;
+    document.getElementById('r-per').textContent = r.perCa;
+    document.getElementById('r-yen').textContent = yen(r.yen);
+    document.getElementById('r-sched').textContent = r.schedHours;
+    document.getElementById('r-doc').textContent = r.docHours;
+    var room = document.getElementById('r-room');
+    room.textContent = ROOM_TEXT[r.room][0];
+    room.className = 'pill ' + r.room;
+    document.getElementById('r-room-text').textContent = ROOM_TEXT[r.room][1];
+
+    var reco = [];
+    if (r.schedHours >= r.docHours || r.room !== 'low') reco.push('つなげる君：応募から数分で、CA本人のGmailから日程調整の案内を自動で送ります。');
+    if (r.docHours > 0) reco.push('つくる君：書類の下書きをAIに任せて、CAは確認と仕上げだけにします。');
+    if (!reco.length) reco.push('まずは30分のデモで、今のやり方に合うかをご確認ください。');
+    document.getElementById('r-reco').innerHTML = reco.map(function (t) {
+      var li = document.createElement('li'); li.textContent = t; return li.outerHTML;
+    }).join('');
+
+    lastResult = {
+      answers: {
+        CA人数: a.ca, 月の応募数: a.apps, 最初の連絡まで: labelOf(f, 'reply'), 日程調整: labelOf(f, 'sched'),
+        面接設定率: labelOf(f, 'rate'), 月の書類件数: a.docs, 書類1人分の時間: labelOf(f, 'doctime')
+      },
+      result: { 月の時間: r.hours, CA1人あたり: r.perCa, 人件費: Math.round(r.yen), 日程調整: r.schedHours, 書類: r.docHours, 伸びしろ: ROOM_TEXT[r.room][0] }
+    };
+
+    document.getElementById('result').style.display = 'block';
+    document.getElementById('contact').style.display = 'block';
+    document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+  });
+
+  document.getElementById('cform').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var f = ev.target;
+    var err = document.getElementById('cerr');
+    var v = function (n) { return f.elements[n].value.trim(); };
+    if (!v('company') || !v('name') || !v('email')) { err.textContent = '会社名・お名前・メールアドレスを入れてください。'; return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v('email'))) { err.textContent = 'メールアドレスの形を確かめてください。'; return; }
+    if (!f.elements.agree.checked) { err.textContent = 'プライバシーポリシーへの同意が必要です。'; return; }
+    if (!ENDPOINT) { err.textContent = '送信先がまだ設定されていません（運営者の準備中）。'; return; }
+    err.textContent = '';
+
+    var btn = document.getElementById('c-submit');
+    btn.disabled = true;
+    btn.textContent = '送信中…';
+    var payload = {
+      company: v('company'), name: v('name'), email: v('email'), tel: v('tel'),
+      want: f.elements.want.value, message: v('message'), website: v('website'),
+      diagnosis: lastResult
+    };
+    // Apps Script は CORS の事前確認に応えないので、text/plain・no-cors で送る（応答は読めない）
+    fetch(ENDPOINT, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) })
+      .then(function () {
+        f.style.display = 'none';
+        document.getElementById('thanks').style.display = 'block';
+      })
+      .catch(function () {
+        err.textContent = '送信できませんでした。時間をおいてもう一度お試しください。';
+        btn.disabled = false;
+        btn.textContent = '申し込む';
+      });
+  });
+</script>
+</body>
+</html>
