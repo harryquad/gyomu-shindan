@@ -322,7 +322,7 @@
       </form>
       <div class="card" id="thanks">
         <h3 style="margin-top:0">お申し込みありがとうございました</h3>
-        <p>2営業日以内に、ご入力のメールアドレスへご連絡します。</p>
+        <p id="thanks-msg">2営業日以内に、ご入力のメールアドレスへご連絡します。</p>
       </div>
     </div>
   </section>
@@ -337,6 +337,8 @@
 <script>
   // 申し込みの送り先（問い合わせ受付のApps ScriptをウェブアプリとしてデプロイしたURL）。空のままだと送信しない
   var ENDPOINT = 'https://script.google.com/macros/s/AKfycbxWtBu0Ba-mhm4vPQKk-L9lhrpVEShF17qgGoGIChiLrOMJDE-lRm-TY9w1NVsKU8p4/exec';
+  // つなげる君（無料デモの日程を自動で案内する）
+  var BOOKING_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzgXZj8k9aSvMHuakI-Hla4d8Bjmck_KoAUe00fBMTG02C0AOQRIzZ8wWS9gAs50HE/exec';
 
   var HOURLY_YEN = 2000;
   var SCHED_AFTER_MIN = 2;  // 自動化後も応募1件ごとに残る確認の手間（分）
@@ -462,8 +464,22 @@
       source: new URLSearchParams(location.search).get('from') || document.referrer || ''
     };
     // Apps Script は CORS の事前確認に応えないので、text/plain・no-cors で送る（応答は読めない）
-    fetch(ENDPOINT, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) })
+    var post = function (url, body) {
+      return fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) });
+    };
+    // 無料デモ・相談は、つなげる君が日程選びのメールを自動で送る（資料だけの方には送らない）
+    var wantsMeeting = f.elements.want.selectedIndex !== 1;
+    var sends = [post(ENDPOINT, payload)];
+    if (wantsMeeting) {
+      sends.push(post(BOOKING_ENDPOINT, { name: payload.name, email: payload.email, tel: payload.tel, company: payload.company, website: payload.website })
+        .catch(function () {})); // こちらが失敗しても申し込み自体は受け付け済み（運営者が手で連絡する）
+    }
+    Promise.all(sends)
       .then(function () {
+        if (wantsMeeting) {
+          document.getElementById('thanks-msg').textContent =
+            '1分ほどで、無料デモの日程を選べるメールが届きます。届かない場合は、迷惑メールのフォルダもご確認ください。';
+        }
         f.style.display = 'none';
         document.getElementById('thanks').style.display = 'block';
       })
