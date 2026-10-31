@@ -290,6 +290,26 @@
           </select>
         </div>
         <div class="field">
+          <label for="c-role">お立場<small>（任意）</small></label>
+          <select id="c-role" name="role">
+            <option value="">選ばない</option>
+            <option>代表・役員</option>
+            <option>事業責任者・マネージャー</option>
+            <option>CA・コーディネーター</option>
+            <option>その他</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="c-age">ご年代<small>（任意）</small></label>
+          <select id="c-age" name="age">
+            <option value="">選ばない</option>
+            <option>20代</option>
+            <option>30代</option>
+            <option>40代</option>
+            <option>50代以上</option>
+          </select>
+        </div>
+        <div class="field">
           <label for="c-msg">ご質問など<small>（任意）</small></label>
           <textarea id="c-msg" name="message" rows="4"></textarea>
         </div>
@@ -436,6 +456,7 @@
     var payload = {
       company: v('company'), name: v('name'), email: v('email'), tel: v('tel'),
       want: f.elements.want.value, message: v('message'), website: v('website'),
+      role: f.elements.role.value, age: f.elements.age.value,
       diagnosis: lastResult,
       // どのSNS・メールから来たか（リンクの末尾 ?from=x などで付ける）
       source: new URLSearchParams(location.search).get('from') || document.referrer || ''
